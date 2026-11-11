@@ -1,0 +1,48 @@
+### Register a new user
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "tester",
+  "email": "tester@example.com",
+  "password": "password"
+}
+
+### Login
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "alice",
+  "password": "password"
+}
+
+### Create a post (requires ACCESS_TOKEN cookie)
+POST http://localhost:8080/api/posts
+Content-Type: application/json
+Cookie: ACCESS_TOKEN={{token}}
+
+{
+  "content": "Hello from HTTP file!",
+  "imageUrl": null
+}
+
+### List feed
+GET http://localhost:8080/api/feed?sort=new
+Cookie: ACCESS_TOKEN={{token}}
+
+### Toggle like
+POST http://localhost:8080/api/posts/{{postId}}/likes/toggle
+Cookie: ACCESS_TOKEN={{token}}
+
+### Upload media (multipart, field name "file") -> 201 {"mediaUrl": "/media/<uuid>.<ext>"}
+POST http://localhost:8080/api/media
+Cookie: ACCESS_TOKEN={{token}}
+Content-Type: multipart/form-data; boundary=BOUNDARY
+
+--BOUNDARY
+Content-Disposition: form-data; name="file"; filename="test.mp4"
+Content-Type: video/mp4
+
+< ./test.mp4
+--BOUNDARY--
