@@ -29,6 +29,13 @@ instakill:
     secret: change-me-change-me-change-me-change-me-change-me-secret-key-1234
     issuer: instakill
     ttl-minutes: 120
+  media:
+    max-width: 300
+    watermark-text: "Instakill Demo"
+  notifications:
+    base-url: https://ntfy.sh
+    # Numele topicului ntfy. Gol = notificari dezactivate. Se poate seta cu variabila NTFY_TOPIC.
+    topic: ${NTFY_TOPIC:}
 logging:
   level:
     org.hibernate.SQL: warn

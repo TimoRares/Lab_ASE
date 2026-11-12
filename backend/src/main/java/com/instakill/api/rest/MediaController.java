@@ -1,6 +1,7 @@
 package com.instakill.api.rest;
 
 import com.instakill.common.error.BadRequestException;
+import com.instakill.media.ImageProcessingService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,9 @@ import java.util.UUID;
  * Upload de imagini/videoclipuri in directorul local configurat prin {@code media.base-path}.
  * Fisierele sunt servite apoi de Spring la {@code /media/**} (vezi WebMvcConfig).
  * Endpoint-ul este protejat: /api/** necesita autentificare (SecurityConfig).
+ *
+ * Imaginile (jpg/jpeg/png) sunt procesate inainte de salvare de {@link ImageProcessingService}:
+ * redimensionare la maximum 300 px latime si watermark. Videoclipurile se salveaza neschimbate.
  */
 @RestController
 @RequestMapping("/api/media")
@@ -35,8 +39,11 @@ public class MediaController {
             Set.of("jpg", "jpeg", "png", "gif", "webp", "mp4", "mov", "webm");
 
     private final Path uploadDir;
+    private final ImageProcessingService imageProcessing;
 
-    public MediaController(@Value("${media.base-path:media}") String mediaBasePath) {
+    public MediaController(@Value("${media.base-path:media}") String mediaBasePath,
+                           ImageProcessingService imageProcessing) {
+        this.imageProcessing = imageProcessing;
         this.uploadDir = Paths.get(mediaBasePath).toAbsolutePath().normalize();
         try {
             Files.createDirectories(uploadDir); // creat la pornire daca lipseste
@@ -69,8 +76,17 @@ public class MediaController {
         }
 
         Files.createDirectories(uploadDir); // in caz ca a fost sters in timpul rularii
-        try (InputStream in = file.getInputStream()) {
-            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        if (imageProcessing.supports(extension)) {
+            try {
+                Files.write(target, imageProcessing.process(file.getBytes(), extension));
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException(e.getMessage());
+            }
+        } else {
+            // videoclipuri (pana la 200MB): copiere in flux, fara a le incarca in memorie
+            try (InputStream in = file.getInputStream()) {
+                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+            }
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mediaUrl", "/media/" + newFilename));

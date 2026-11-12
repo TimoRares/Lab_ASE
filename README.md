@@ -75,3 +75,20 @@ Check `vite.config.js` for these settings.
 - Limite: `spring.servlet.multipart.max-file-size / max-request-size = 200MB`
 - Extensii permise: jpg, jpeg, png, gif, webp, mp4, mov, webm
 - Frontend: la alegerea unui fișier se face upload, iar `mediaUrl` devine `imageUrl` al postării (video → `<video controls>`)
+
+## Lab 4 – notificări și procesare imagini
+
+**Notificare la postare nouă (ntfy.sh)**
+- `PostService.createPost` publică un `PostCreatedEvent`; `PostNotificationListener` îl primește *după commit* și trimite asincron (executor `notificationExecutor`) un POST HTTP către ntfy.sh cu username, ID-ul postării și timestamp.
+- Notificările sunt active doar dacă topicul e setat. Alege un nume greu de ghicit și pornește backend-ul cu:
+  ```powershell
+  $env:NTFY_TOPIC="instakill-numele-tau-1234"
+  ..\.gradle\bootstrap\gradle-8.9\bin\gradle.bat bootRun --args="--server.port=8081"
+  ```
+  Apoi deschide `https://ntfy.sh/instakill-numele-tau-1234` în browser (sau abonează-te din aplicația ntfy) și creează o postare.
+- O notificare eșuată este doar logată, nu afectează crearea postării.
+
+**Procesare imagini la upload**
+- `MediaController` trimite imaginile `jpg/jpeg/png` prin `ImageProcessingService` (pachetul `com.instakill.media`, fără dependențe web, deci mutabil ulterior într-un worker): scalare la maximum 300 px lățime cu păstrarea proporțiilor (fără mărire) și watermark „Instakill Demo” în colțul din dreapta-jos.
+- Setări în `application.yaml`: `instakill.media.max-width` și `instakill.media.watermark-text`.
+- `gif`, `webp` și videoclipurile se salvează neschimbate (un GIF animat și-ar pierde animația). Un fișier cu extensie de imagine dar conținut invalid primește `400`.
