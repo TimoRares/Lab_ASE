@@ -4,6 +4,8 @@
       <h1>Instakill</h1>
       <nav v-if="user">
         <span class="user">@{{ user.username }}</span>
+        <button :class="{ active: view === 'feed' }" @click="view = 'feed'">Feed</button>
+        <button :class="{ active: view === 'analytics' }" @click="view = 'analytics'">Analytics</button>
         <button @click="logout">Logout</button>
       </nav>
     </header>
@@ -23,6 +25,8 @@
           <button type="submit">Continue</button>
         </form>
       </section>
+
+      <Analytics v-else-if="view === 'analytics'" />
 
       <section v-else class="feed">
         <form @submit.prevent="createNewPost" class="card form composer">
@@ -95,9 +99,11 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import Analytics from './Analytics.vue'
 import { createPost, fetchMe, listFeed, login, register as registerUser, toggleLike, listComments, addComment, uploadMedia } from './api'
 
 const user = ref(null)
+const view = ref('feed')
 const posts = ref([])
 const sort = ref('new')
 const authMode = ref('login')
@@ -250,6 +256,7 @@ async function logout() {
   }
   document.cookie = 'ACCESS_TOKEN=; Max-Age=0; path=/'
   user.value = null
+  view.value = 'feed'
   posts.value = []
 }
 </script>
@@ -272,6 +279,10 @@ async function logout() {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+.app-header nav button.active {
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .app-header button {

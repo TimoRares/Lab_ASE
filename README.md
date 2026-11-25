@@ -92,3 +92,23 @@ Check `vite.config.js` for these settings.
 - `MediaController` trimite imaginile `jpg/jpeg/png` prin `ImageProcessingService` (pachetul `com.instakill.media`, fără dependențe web, deci mutabil ulterior într-un worker): scalare la maximum 300 px lățime cu păstrarea proporțiilor (fără mărire) și watermark „Instakill Demo” în colțul din dreapta-jos.
 - Setări în `application.yaml`: `instakill.media.max-width` și `instakill.media.watermark-text`.
 - `gif`, `webp` și videoclipurile se salvează neschimbate (un GIF animat și-ar pierde animația). Un fișier cu extensie de imagine dar conținut invalid primește `400`.
+
+## Lab 5 – analytics și populare bază de date
+
+**Analytics** (`GET /api/analytics/me`, doar pentru utilizatorul logat; în frontend, butonul *Analytics*)
+- Postări, like-uri și comentarii pe săptămână (săptămâna începe luni; fiecare tip se grupează după data propriei creări)
+- Top 5 postări după engagement (like-uri + comentarii)
+- Raport like-uri / comentarii pentru toate postările
+- Media like-uri / postare pentru poze vs. videoclipuri (tipul se deduce din extensia lui `image_url`: `.mp4`, `.mov`, `.webm` = video)
+- Locul în top X% dintre utilizatori după engagement mediu / postare
+- Totul se calculează cu SQL în `AnalyticsRepository`; indexurile necesare se creează la pornire (`AnalyticsIndexInitializer`).
+
+**Populare bază de date** (`backend/populate_db.py`, cu backend-ul oprit)
+```powershell
+pip install faker bcrypt
+cd backend
+python populate_db.py                    # 10.000 utilizatori, 10-20 postări/utilizator, 0-10 comentarii, 0-20 like-uri
+python populate_db.py --users 500        # mai puțini utilizatori
+python populate_db.py --help             # toți parametrii
+```
+Scriptul șterge comentariile, like-urile, postările și utilizatorii (mai puțin `alice` și `bob`), adaugă `charlie` (parola `password`, hash bcrypt) și generează datele în loturi, într-o tranzacție. Toate postările au data de creare în ultima săptămână. La final verifică lipsa înregistrărilor orfane.
